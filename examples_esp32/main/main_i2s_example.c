@@ -67,6 +67,11 @@ static const char *TAG = "TEN_VAD_I2S";
 #define RECORDING_BUFFER_SIZE       (I2S_SAMPLE_RATE * MAX_RECORDING_DURATION_SEC)  // 15 seconds at 8kHz
 #define RECORDING_CHUNK_SIZE        VAD_HOP_SIZE  // Record in chunks matching VAD frame size
 
+// Transmission configuration
+#define TRANSMISSION_CHUNK_DURATION_SEC  2      // Seconds of audio per transmission
+#define TRANSMISSION_CHECK_INTERVAL_MS   2000   // Check buffer every 2 seconds
+#define STATS_REPORT_INTERVAL_US         5000000  // Report statistics every 5 seconds (microseconds)
+
 // Circular buffer for recording
 typedef struct {
     int16_t *buffer;
@@ -255,8 +260,13 @@ size_t circular_buffer_available(circular_buffer_t *cb)
 /**
  * Transmission hook for sending recorded audio to remote server
  * This is a stub that will be implemented later
+ * 
+ * @param audio_data Pointer to audio samples (int16_t PCM)
+ * @param sample_count Number of samples in the buffer
+ * @param transmission_context User-defined context for transmission (e.g., server config)
+ * @return ESP_OK on success, error code on failure
  */
-esp_err_t transmit_audio_hook(const int16_t *audio_data, size_t sample_count, void *user_context)
+esp_err_t transmit_audio_hook(const int16_t *audio_data, size_t sample_count, void *transmission_context)
 {
     // TODO: Implement actual transmission to remote server
     // This could use HTTP, MQTT, WebSocket, or other protocols
@@ -280,7 +290,7 @@ void transmission_task(void *pvParameters)
 {
     circular_buffer_t *cb = (circular_buffer_t *)pvParameters;
     int16_t *transmission_buffer = NULL;
-    size_t transmission_chunk_size = I2S_SAMPLE_RATE * 2;  // 2 seconds worth of audio
+    size_t transmission_chunk_size = I2S_SAMPLE_RATE * TRANSMISSION_CHUNK_DURATION_SEC;
     
     transmission_buffer = (int16_t *)heap_caps_malloc(transmission_chunk_size * sizeof(int16_t),
                                                        MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
@@ -295,7 +305,7 @@ void transmission_task(void *pvParameters)
     
     while (1) {
         // Wait for some data to accumulate in the buffer
-        vTaskDelay(pdMS_TO_TICKS(2000));  // Check every 2 seconds
+        vTaskDelay(pdMS_TO_TICKS(TRANSMISSION_CHECK_INTERVAL_MS));
         
         size_t available = circular_buffer_available(cb);
         
@@ -483,7 +493,7 @@ void vad_task(void *pvParameters)
             
             // Report statistics every 5 seconds
             uint64_t current_time = esp_timer_get_time();
-            if (current_time - last_report_time >= 5000000) { // 5 seconds
+            if (current_time - last_report_time >= STATS_REPORT_INTERVAL_US) {
                 float voice_percentage = (float)voice_frames / frame_count * 100;
                 size_t buffer_available = circular_buffer_available(record_buffer);
                 float buffer_duration = buffer_available / (float)I2S_SAMPLE_RATE;
