@@ -165,7 +165,11 @@ To use it:
    - VDD → 3.3V
    - GND → GND
 
-2. Replace `main.c` with the I2S example:
+2. Connect an LED to GPIO 2 (or use the built-in LED on most ESP32-S3 boards):
+   - LED anode → GPIO 2
+   - LED cathode → GND (through appropriate resistor, e.g., 220Ω)
+
+3. Replace `main.c` with the I2S example:
    ```bash
    cd main
    mv main.c main_simple.c
@@ -173,28 +177,74 @@ To use it:
    cd ..
    ```
 
-3. Rebuild and flash:
+4. Rebuild and flash:
    ```bash
    idf.py build flash monitor
    ```
 
 The I2S example provides:
-- Continuous real-time VAD processing
-- Direct microphone input
-- Voice activity statistics
-- Production-ready structure
+- **Optimized 8kHz sample rate** for better performance
+- **LED indicator** on GPIO 2 that lights up when voice is detected
+- **Continuous real-time VAD processing** with direct microphone input
+- **Audio recording buffer** (up to 15 seconds)
+- **Parallel recording and transmission tasks** running on separate CPU cores
+- **Circular buffer** with mutex synchronization for thread-safe operation
+- **Transmission hook** for sending recorded audio to remote server (stub for future implementation)
+- **Voice activity statistics** with detailed reporting
+- **Production-ready structure** with proper resource management
+
+### Advanced Features
+
+#### Audio Recording
+The I2S example includes a circular buffer that can store up to 15 seconds of audio at 8kHz. Recording automatically starts when voice is detected and continues until the maximum duration is reached. The buffer uses PSRAM for efficient memory usage.
+
+#### Parallel Processing
+The implementation uses FreeRTOS to run recording and transmission in parallel:
+- **VAD Task** (Core 1): Handles I2S audio input, VAD processing, and writing to the recording buffer
+- **Transmission Task** (Core 0): Reads from the recording buffer and sends data to a remote server
+
+Both tasks are synchronized using mutexes to ensure thread-safe access to the shared circular buffer.
+
+#### Transmission Hook
+A transmission hook function `transmit_audio_hook()` is provided as a stub for future implementation. You can customize this to:
+- Send audio via HTTP POST to a REST API
+- Publish audio data via MQTT
+- Stream audio via WebSocket
+- Upload to cloud storage
+- Use any other protocol suitable for your application
 
 ### Adjusting VAD Parameters
 
-In `main.c`, you can adjust:
+In `main_i2s_example.c`, you can adjust:
 
-- `hop_size`: Frame size (default: 256 samples = 16ms at 16kHz)
-- `voice_threshold`: Detection threshold (default: 0.5, range: 0.0-1.0)
+- `I2S_SAMPLE_RATE`: Audio sample rate (default: 8000 Hz for optimized performance)
+- `VAD_HOP_SIZE`: Frame size (default: 128 samples = 16ms at 8kHz)
+- `VAD_THRESHOLD`: Detection threshold (default: 0.5, range: 0.0-1.0)
+- `MAX_RECORDING_DURATION_SEC`: Maximum recording duration (default: 15 seconds)
+- `LED_GPIO`: GPIO pin for LED indicator (default: GPIO 2)
 
 ```c
-const int hop_size = 256; // or 160 for 10ms frames
-float voice_threshold = 0.5f; // adjust based on your use case
+// I2S Configuration - can be changed to 16kHz if needed
+#define I2S_SAMPLE_RATE     8000   // 8kHz for optimized performance
+
+// VAD Configuration - adjusted for 8kHz
+#define VAD_HOP_SIZE        128    // 16ms at 8kHz (or 256 for 16kHz)
+#define VAD_THRESHOLD       0.5f   // adjust based on your use case
+
+// Recording Configuration
+#define MAX_RECORDING_DURATION_SEC  15  // Maximum recording duration
+
+// LED Configuration
+#define LED_GPIO            GPIO_NUM_2  // Change to your preferred GPIO
 ```
+
+**Note on Sample Rates:**
+- **8kHz**: Optimized for voice, lower CPU usage, smaller buffer sizes (recommended)
+- **16kHz**: Standard VAD rate, higher quality, more CPU usage
+
+When changing the sample rate, adjust `VAD_HOP_SIZE` accordingly to maintain 16ms frames:
+- For 8kHz: Use 128 samples (128/8000 = 16ms frames)
+- For 16kHz: Use 256 samples (256/16000 = 16ms frames)
 
 ## Performance
 
@@ -204,6 +254,9 @@ TEN VAD on ESP32-S3 achieves:
 - **Latency**: ~16ms per frame
 - **CPU Usage**: Low, leaving plenty of resources for other tasks
 - **Memory Efficiency**: Uses PSRAM for buffers, minimal internal RAM
+- **Dual-Core Processing**: VAD and transmission tasks run in parallel on separate cores
+- **Recording Buffer**: 15 seconds at 8kHz (120,000 samples = 240KB in PSRAM)
+- **Sample Rate Optimization**: 8kHz reduces bandwidth and processing requirements by 50% compared to 16kHz
 
 ## Troubleshooting
 

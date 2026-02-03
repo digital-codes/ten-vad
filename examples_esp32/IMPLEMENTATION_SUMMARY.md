@@ -28,21 +28,33 @@ Successfully ported TEN VAD to ESP32-S3 platform with ESP-IDF v5, enabling voice
 - Perfect for quick testing and validation
 
 #### Advanced I2S Example (`main_i2s_example.c`)
-- Real-time audio input from I2S microphone
-- Continuous VAD processing
-- Voice activity statistics
-- Production-ready structure
-- Support for common I2S microphones (INMP441, SPH0645, etc.)
+- **Optimized 8kHz sample rate** for better performance and lower bandwidth
+- **LED indicator** (GPIO 2) for visual voice detection feedback
+- **Real-time audio input** from I2S microphone
+- **Continuous VAD processing** with frame-by-frame analysis
+- **Audio recording buffer** (15 seconds capacity) using circular buffer
+- **Parallel processing** with dual-core task architecture:
+  - VAD Task (Core 1): Audio processing and recording
+  - Transmission Task (Core 0): Network/remote server communication
+- **Thread-safe synchronization** using FreeRTOS mutexes
+- **Transmission hook** for sending audio to remote server (stub for custom implementation)
+- **Voice activity statistics** with detailed reporting
+- **Production-ready structure** with proper resource management
+- **Support for common I2S microphones** (INMP441, SPH0645, ICS-43434, etc.)
 
 ### 4. Memory Management ✅
-- Efficient PSRAM utilization
+- Efficient PSRAM utilization for large buffers
+- **Circular recording buffer** (240KB in PSRAM for 15 seconds at 8kHz)
 - Internal RAM preserved for critical operations
 - Dynamic allocation using ESP32 heap capabilities API
 - Automatic selection of PSRAM for large buffers
 - Minimal memory footprint (~300KB code, dynamic data in PSRAM)
+- Thread-safe buffer access with mutex synchronization
 
 ### 5. Performance ✅
 - Real-Time Factor (RTF): Expected < 0.1
+- **8kHz sample rate optimization**: 50% reduction in bandwidth and processing
+- **Dual-core processing**: Parallel VAD and transmission tasks
 - Low latency: ~16ms per frame
 - Efficient CPU usage
 - Leaves resources for other tasks
@@ -176,21 +188,24 @@ ten_vad_destroy(&vad_handle);
 
 ## Files Changed/Added
 
-### New Files (11 files)
+### New Files (12 files)
 1. `examples_esp32/CMakeLists.txt` - Main project file
 2. `examples_esp32/sdkconfig.defaults` - ESP32-S3 configuration
 3. `examples_esp32/build.sh` - Build script
 4. `examples_esp32/.gitignore` - Build artifacts
-5. `examples_esp32/README.md` - Comprehensive guide
+5. `examples_esp32/README.md` - Comprehensive guide (updated with new features)
 6. `examples_esp32/QUICKSTART.md` - Quick start guide
 7. `examples_esp32/TESTING.md` - Test plan
-8. `examples_esp32/main/CMakeLists.txt` - Main component
-9. `examples_esp32/main/main.c` - Basic example
-10. `examples_esp32/main/main_i2s_example.c` - I2S example
-11. `examples_esp32/components/ten_vad/CMakeLists.txt` - Component
+8. `examples_esp32/OPTIMIZATION_SUMMARY.md` - Detailed optimization documentation (NEW)
+9. `examples_esp32/main/CMakeLists.txt` - Main component
+10. `examples_esp32/main/main.c` - Basic example
+11. `examples_esp32/main/main_i2s_example.c` - Advanced I2S example (updated with new features)
+12. `examples_esp32/components/ten_vad/CMakeLists.txt` - Component
 
-### Modified Files (1 file)
-1. `README.md` - Added ESP32 platform support
+### Modified Files (3 files)
+1. `README.md` - Added ESP32 platform support (root README)
+2. `examples_esp32/README.md` - Updated with new features documentation
+3. `examples_esp32/IMPLEMENTATION_SUMMARY.md` - Updated with optimization details
 
 ## Code Quality
 
@@ -215,14 +230,25 @@ ten_vad_destroy(&vad_handle);
 
 ## Future Enhancements
 
+### Recently Implemented ✅
+1. **8kHz sample rate optimization** - Reduces bandwidth and processing by 50%
+2. **LED indicator** - Visual feedback for voice detection status
+3. **Audio recording buffer** - Circular buffer with 15-second capacity
+4. **Parallel processing** - Dual-core task architecture for recording and transmission
+5. **Transmission hook** - Interface for sending audio to remote server
+6. **Thread synchronization** - Mutex-based protection for shared resources
+
 ### Potential Improvements
 1. Add support for other ESP32 variants (S2, C3)
 2. Optimize for even lower power consumption
 3. Add more audio input examples (ADC, PDM)
-4. Create mobile app for visualization
-5. Add OTA (Over-The-Air) update support
-6. Implement cloud connectivity examples
-7. Add real-time streaming examples
+4. **Implement actual transmission protocols** (HTTP, MQTT, WebSocket)
+5. **Add audio compression** (Opus, MP3) before transmission
+6. Create mobile app for visualization
+7. Add OTA (Over-The-Air) update support
+8. **Implement WiFi connectivity and server configuration**
+9. Add real-time streaming examples
+10. **Storage to SD card option** for recorded audio
 
 ### Community Contributions Welcome
 - Hardware testing with different boards
