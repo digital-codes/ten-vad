@@ -243,7 +243,7 @@ git clone https://github.com/TEN-framework/ten-vad.git
 
 ## **Quick Start**
 
-The project supports five major platforms with dynamic library linking.
+The project supports six major platforms with dynamic library linking.
 
 <table>
   <tr>
@@ -259,7 +259,7 @@ The project supports five major platforms with dynamic library linking.
     <td align="center"> libten_vad.so </td>
     <td align="center"> x64 </td>
     <td align="center"> Python, C, Java, Go </td>
-    <td rowspan="6">ten_vad.h <br> ten_vad.py <br> ten_vad.js <br> TenVad.java</td>
+    <td rowspan="7">ten_vad.h <br> ten_vad.py <br> ten_vad.js <br> TenVad.java</td>
     <td>  </td>
   </tr>
   <tr>
@@ -296,6 +296,13 @@ The project supports five major platforms with dynamic library linking.
     <td align="center"> arm64 </td>
     <td align="center"> C </td>
     <td> 1. not simulator <br> 2. not iPad </td>
+  </tr>
+  <tr>
+    <th align="center"> ESP32 </th>
+    <td align="center"> Built from source </td>
+    <td align="center"> ESP32-S3 </td>
+    <td align="center"> C </td>
+    <td> ESP-IDF v5 <br> 8MB PSRAM </td>
   </tr>
 
 </table>
@@ -712,6 +719,46 @@ cd ./examples
       - Specify your Certification
 
         3.5. Build in Xcode and run demo on your device.
+
+<br>
+
+#### **6. ESP32**
+
+##### **Requirements**
+
+- ESP-IDF v5.0 or later
+- ESP32-S3 development board with 8MB PSRAM
+- Python 3.8 or later
+- CMake 3.16 or later
+
+##### **Usage**
+
+See the detailed guide in `examples_esp32/README.md` for complete instructions.
+
+Quick start:
+
+```
+1) Install ESP-IDF v5 and set up the environment
+   Follow: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/
+
+2) cd ./examples_esp32
+
+3) Set target to ESP32-S3
+   idf.py set-target esp32s3
+
+4) Build the project
+   idf.py build
+
+5) Flash to ESP32-S3 board
+   idf.py -p /dev/ttyUSB0 flash monitor
+```
+
+The ESP32 port features:
+- Optimized for ESP32-S3 with 8MB PSRAM
+- Efficient memory usage with PSRAM support
+- Real-time processing at 16kHz
+- Low latency voice activity detection
+- Full source code compilation (no prebuilt libraries)
 
 <br>
 
