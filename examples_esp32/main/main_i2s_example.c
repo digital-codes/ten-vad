@@ -69,6 +69,7 @@ static const char *TAG = "TEN_VAD_I2S";
 
 // Transmission configuration
 #define TRANSMISSION_CHUNK_DURATION_SEC  2      // Seconds of audio per transmission
+#define TRANSMISSION_CHUNK_SIZE          (I2S_SAMPLE_RATE * TRANSMISSION_CHUNK_DURATION_SEC)  // Samples per transmission
 #define TRANSMISSION_CHECK_INTERVAL_MS   2000   // Check buffer every 2 seconds
 #define STATS_REPORT_INTERVAL_US         5000000  // Report statistics every 5 seconds (microseconds)
 
@@ -86,6 +87,10 @@ typedef struct {
 static i2s_chan_handle_t rx_handle = NULL;
 static void *vad_handle = NULL;
 static circular_buffer_t *record_buffer = NULL;
+
+// Note: voice_activity_detected is volatile for visibility across tasks
+// It is written only by VAD task and can be read by other tasks
+// For simple boolean flag updates, volatile is sufficient without mutex
 static volatile bool voice_activity_detected = false;
 
 /**
@@ -188,6 +193,7 @@ size_t circular_buffer_write(circular_buffer_t *cb, const int16_t *data, size_t 
     }
     
     if (xSemaphoreTake(cb->mutex, portMAX_DELAY) != pdTRUE) {
+        ESP_LOGE("CIRCULAR_BUFFER", "Failed to acquire mutex for write operation");
         return 0;
     }
     
@@ -221,6 +227,7 @@ size_t circular_buffer_read(circular_buffer_t *cb, int16_t *data, size_t samples
     }
     
     if (xSemaphoreTake(cb->mutex, portMAX_DELAY) != pdTRUE) {
+        ESP_LOGE("CIRCULAR_BUFFER", "Failed to acquire mutex for read operation");
         return 0;
     }
     
@@ -248,6 +255,7 @@ size_t circular_buffer_available(circular_buffer_t *cb)
     }
     
     if (xSemaphoreTake(cb->mutex, portMAX_DELAY) != pdTRUE) {
+        ESP_LOGE("CIRCULAR_BUFFER", "Failed to acquire mutex for available check");
         return 0;
     }
     
@@ -290,9 +298,8 @@ void transmission_task(void *pvParameters)
 {
     circular_buffer_t *cb = (circular_buffer_t *)pvParameters;
     int16_t *transmission_buffer = NULL;
-    size_t transmission_chunk_size = I2S_SAMPLE_RATE * TRANSMISSION_CHUNK_DURATION_SEC;
     
-    transmission_buffer = (int16_t *)heap_caps_malloc(transmission_chunk_size * sizeof(int16_t),
+    transmission_buffer = (int16_t *)heap_caps_malloc(TRANSMISSION_CHUNK_SIZE * sizeof(int16_t),
                                                        MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     
     if (transmission_buffer == NULL) {
@@ -309,9 +316,9 @@ void transmission_task(void *pvParameters)
         
         size_t available = circular_buffer_available(cb);
         
-        if (available >= transmission_chunk_size) {
+        if (available >= TRANSMISSION_CHUNK_SIZE) {
             // Read audio data from buffer
-            size_t read = circular_buffer_read(cb, transmission_buffer, transmission_chunk_size);
+            size_t read = circular_buffer_read(cb, transmission_buffer, TRANSMISSION_CHUNK_SIZE);
             
             if (read > 0) {
                 ESP_LOGI(TAG, "Transmitting %d samples to remote server...", (int)read);

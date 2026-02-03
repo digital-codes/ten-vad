@@ -242,9 +242,9 @@ In `main_i2s_example.c`, you can adjust:
 - **8kHz**: Optimized for voice, lower CPU usage, smaller buffer sizes (recommended)
 - **16kHz**: Standard VAD rate, higher quality, more CPU usage
 
-When changing the sample rate, adjust `VAD_HOP_SIZE` accordingly:
-- For 8kHz: Use 128 samples for 16ms frames
-- For 16kHz: Use 256 samples for 16ms frames
+When changing the sample rate, adjust `VAD_HOP_SIZE` accordingly to maintain 16ms frames:
+- For 8kHz: Use 128 samples (128/8000 = 16ms frames)
+- For 16kHz: Use 256 samples (256/16000 = 16ms frames)
 
 ## Performance
 
