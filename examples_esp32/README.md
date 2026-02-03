@@ -137,43 +137,52 @@ The implementation automatically uses PSRAM for large allocations, keeping inter
 
 ```
 examples_esp32/
-├── CMakeLists.txt              # Main ESP-IDF project file
-├── sdkconfig.defaults          # Default ESP32-S3 configuration
-├── README.md                   # This file
+├── CMakeLists.txt                  # Main ESP-IDF project file
+├── sdkconfig.defaults              # Default ESP32-S3 configuration
+├── build.sh                        # Build helper script
+├── README.md                       # This file
 ├── main/
-│   ├── CMakeLists.txt         # Main component build config
-│   └── main.c                 # Application entry point
+│   ├── CMakeLists.txt             # Main component build config
+│   ├── main.c                     # Simple test application
+│   └── main_i2s_example.c         # Advanced I2S microphone example
 └── components/
     └── ten_vad/
-        └── CMakeLists.txt     # TEN VAD component build config
+        └── CMakeLists.txt         # TEN VAD component build config
 ```
 
 ## Customization
 
-### Using Real Audio Input
+### Using Real Audio Input (I2S Microphone)
 
-The current implementation uses hardcoded test audio samples. To use real audio input:
+An advanced example with I2S microphone support is provided in `main/main_i2s_example.c`.
 
-1. Add I2S driver support for your audio input device
-2. Configure I2S in `main.c`
-3. Replace the test samples with real-time audio frames from I2S
-4. Process audio in real-time using the VAD
+To use it:
 
-Example I2S configuration (to be added):
+1. Connect your I2S microphone (e.g., INMP441, SPH0645, ICS-43434):
+   - WS (LRCK) → GPIO 15
+   - SCK (BCLK) → GPIO 14
+   - SD (DATA) → GPIO 13
+   - VDD → 3.3V
+   - GND → GND
 
-```c
-i2s_config_t i2s_config = {
-    .mode = I2S_MODE_MASTER | I2S_MODE_RX,
-    .sample_rate = 16000,  // 16kHz for TEN VAD
-    .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
-    .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-    .communication_format = I2S_COMM_FORMAT_STAND_I2S,
-    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-    .dma_buf_count = 8,
-    .dma_buf_len = 256,  // Match hop_size
-    .use_apll = false,
-};
-```
+2. Replace `main.c` with the I2S example:
+   ```bash
+   cd main
+   mv main.c main_simple.c
+   mv main_i2s_example.c main.c
+   cd ..
+   ```
+
+3. Rebuild and flash:
+   ```bash
+   idf.py build flash monitor
+   ```
+
+The I2S example provides:
+- Continuous real-time VAD processing
+- Direct microphone input
+- Voice activity statistics
+- Production-ready structure
 
 ### Adjusting VAD Parameters
 
