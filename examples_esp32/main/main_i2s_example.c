@@ -88,10 +88,10 @@ static i2s_chan_handle_t rx_handle = NULL;
 static void *vad_handle = NULL;
 static circular_buffer_t *record_buffer = NULL;
 
-// Note: voice_activity_detected is volatile for visibility across tasks
-// It is written only by VAD task and can be read by other tasks
-// For simple boolean flag updates, volatile is sufficient without mutex
-static volatile bool voice_activity_detected = false;
+// Note: voice_activity_detected is currently not used by other tasks
+// If needed in the future, use atomic operations (stdatomic.h) for thread safety
+// on multi-core systems instead of just volatile
+// static volatile bool voice_activity_detected = false;
 
 /**
  * Initialize LED GPIO
@@ -335,8 +335,10 @@ void transmission_task(void *pvParameters)
         }
     }
     
-    heap_caps_free(transmission_buffer);
-    vTaskDelete(NULL);
+    // Note: This cleanup code is unreachable due to infinite loop above
+    // If graceful shutdown is needed, add a task termination flag and break from loop
+    // heap_caps_free(transmission_buffer);
+    // vTaskDelete(NULL);
 }
 
 /**
@@ -457,8 +459,7 @@ void vad_task(void *pvParameters)
         if (vad_ret == 0) {
             frame_count++;
             
-            // Update voice activity flag and LED
-            voice_activity_detected = voice_detected;
+            // Update LED based on voice detection
             set_led_state(voice_detected);
             
             if (voice_detected) {

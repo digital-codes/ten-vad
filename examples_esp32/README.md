@@ -255,7 +255,7 @@ TEN VAD on ESP32-S3 achieves:
 - **CPU Usage**: Low, leaving plenty of resources for other tasks
 - **Memory Efficiency**: Uses PSRAM for buffers, minimal internal RAM
 - **Dual-Core Processing**: VAD and transmission tasks run in parallel on separate cores
-- **Recording Buffer**: 15 seconds at 8kHz (120KB in PSRAM)
+- **Recording Buffer**: 15 seconds at 8kHz (120,000 samples = 240KB in PSRAM)
 - **Sample Rate Optimization**: 8kHz reduces bandwidth and processing requirements by 50% compared to 16kHz
 
 ## Troubleshooting
