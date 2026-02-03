@@ -17,3 +17,8 @@ examples/out.txt
 # Python extension module for TEN VAD C++/C and ONNX runtime.
 examples_onnx/python/build-linux
 examples_onnx/python/build-macos
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+_codeql_detected_source_root
