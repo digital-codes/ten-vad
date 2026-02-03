@@ -144,12 +144,12 @@ void vad_task(void *pvParameters)
     
     while (1) {
         // Read audio data from I2S
-        esp_err_t ret = i2s_channel_read(rx_handle, audio_buffer, 
+        esp_err_t i2s_ret = i2s_channel_read(rx_handle, audio_buffer, 
                                          VAD_HOP_SIZE * sizeof(int16_t), 
                                          &bytes_read, portMAX_DELAY);
         
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "I2S read failed: %s", esp_err_to_name(ret));
+        if (i2s_ret != ESP_OK) {
+            ESP_LOGE(TAG, "I2S read failed: %s", esp_err_to_name(i2s_ret));
             continue;
         }
         
@@ -159,10 +159,10 @@ void vad_task(void *pvParameters)
         }
         
         // Process with VAD
-        ret = ten_vad_process(vad_handle, audio_buffer, VAD_HOP_SIZE,
+        int vad_ret = ten_vad_process(vad_handle, audio_buffer, VAD_HOP_SIZE,
                              &probability, &voice_detected);
         
-        if (ret == 0) {
+        if (vad_ret == 0) {
             frame_count++;
             if (voice_detected) {
                 voice_frames++;
@@ -187,7 +187,7 @@ void vad_task(void *pvParameters)
                 last_report_time = current_time;
             }
         } else {
-            ESP_LOGE(TAG, "VAD processing failed: %d", ret);
+            ESP_LOGE(TAG, "VAD processing failed: %d", vad_ret);
         }
         
         // Small delay to prevent watchdog timeout
