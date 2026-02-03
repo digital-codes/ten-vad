@@ -193,7 +193,7 @@ size_t circular_buffer_write(circular_buffer_t *cb, const int16_t *data, size_t 
     }
     
     if (xSemaphoreTake(cb->mutex, portMAX_DELAY) != pdTRUE) {
-        ESP_LOGE("CIRCULAR_BUFFER", "Failed to acquire mutex for write operation");
+        ESP_LOGE(TAG, "Failed to acquire mutex for write operation");
         return 0;
     }
     
@@ -227,7 +227,7 @@ size_t circular_buffer_read(circular_buffer_t *cb, int16_t *data, size_t samples
     }
     
     if (xSemaphoreTake(cb->mutex, portMAX_DELAY) != pdTRUE) {
-        ESP_LOGE("CIRCULAR_BUFFER", "Failed to acquire mutex for read operation");
+        ESP_LOGE(TAG, "Failed to acquire mutex for read operation");
         return 0;
     }
     
@@ -255,7 +255,7 @@ size_t circular_buffer_available(circular_buffer_t *cb)
     }
     
     if (xSemaphoreTake(cb->mutex, portMAX_DELAY) != pdTRUE) {
-        ESP_LOGE("CIRCULAR_BUFFER", "Failed to acquire mutex for available check");
+        ESP_LOGE(TAG, "Failed to acquire mutex for available check");
         return 0;
     }
     
